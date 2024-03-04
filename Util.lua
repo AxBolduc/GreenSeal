@@ -1,3 +1,11 @@
+--- STEAMODDED HEADER
+--- MOD_NAME: AxUtil
+--- MOD_ID: AxUtil
+--- MOD_AUTHOR: [AxBolduc]
+--- MOD_DESCRIPTION: Utility mod to facilitate adding seals
+----------------------------------------------
+------------MOD CODE -------------------------
+
 function refresh_items()
     for k, v in pairs(G.P_SEALS) do
         table.sort(v, function(a, b) return a.order < b.order end)
@@ -47,3 +55,6 @@ function add_seal(mod_id, sealId, locId, labelName, data, desc)
     G.localization.descriptions.Other[locId] = desc;
     G.localization.misc.labels[locId] = labelName
 end
+
+----------------------------------------------
+------------MOD CODE END----------------------

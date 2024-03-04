@@ -7,7 +7,7 @@
 ----------------------------------------------
 ------------MOD CODE -------------------------
 
-local MOD_ID = 'RatSeal'
+local MOD_ID = 'GreenSeal'
 
 function SMODS.INIT.RatSeal()
     _RELEASE_MODE = false
