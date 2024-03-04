@@ -40,7 +40,7 @@ local calculate_seal_ref = Card.calculate_seal
 function Card:calculate_seal(context)
     local fromRef = calculate_seal_ref(self, context)
 
-    if context.scoring_hand and not context.repetition_only then
+    if context.cardarea == G.play and not context.repetition_only then
         if self.seal == 'Green' then
             return {
                 x_mult = 0.75
@@ -82,7 +82,7 @@ local eval_card_ref = eval_card
 function eval_card(card, context)
     local fromRef = eval_card_ref(card, context)
 
-    if context.scoring_hand then
+    if context.scoring_hand and not context.repetition_only then
         local seal = card:calculate_seal(context)
         if seal then
             fromRef.x_mult = (fromRef.x_mult or 1) * seal.x_mult
@@ -269,6 +269,11 @@ function Controller:key_press_update(key, dt)
             if key == 'e' then
                 if (_card.ability.set == 'Joker' or _card.playing_card or _card.area) then
                     _card:set_seal('Green', true, true)
+                end
+            end
+            if key == 'w' then
+                if (_card.playing_card or _card.area) then
+                    _card:set_seal('Red', true, true)
                 end
             end
         end
