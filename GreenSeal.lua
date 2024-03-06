@@ -56,6 +56,31 @@ function SMODS.INIT.RatSeal()
       }
     )
 
+
+    add_item(
+      MOD_ID,
+      'Spectral',
+      'ancillary',
+      {
+        discovered = false,
+        cost = 4,
+        consumable = true,
+        set = 'Planet',
+        config = {
+          extra = 'Green',
+          max_highlighted = 1
+        }
+      },
+      {
+        name = "Ancillary",
+        text = {
+          "Add a {C:green}Green Seal{}",
+          "to {C:attention}1{} selected",
+          "card in your hand"
+        }
+      }
+    )
+
     refresh_items()
 end
 
