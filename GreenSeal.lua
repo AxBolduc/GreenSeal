@@ -9,6 +9,7 @@
 
 local MOD_ID = 'GreenSeal'
 
+
 function SMODS.INIT.RatSeal()
     _RELEASE_MODE = false
 
@@ -20,16 +21,37 @@ function SMODS.INIT.RatSeal()
         {
             discovered = false,
             set = 'Seal',
-            config = { Xmult = 1.9 }
+            config = { }
         },
         {
             name = "Green Seal",
             text = {
                 "Increases round hand size",
-                "by 1 when {C:attention}discarded",
-                "{X:red,C:white} X0.75 {} mult when played",
+                "by 1 when {C:attention}discarded"
             }
         }
+    )
+
+    add_item(
+      MOD_ID,
+      'Spectral',
+      'ancillary',
+      {
+        discovered = false,
+        set = 'Spectral',
+        config = {
+          extra = 'Green',
+          max_highlighted = 1
+        }
+      },
+      {
+        name = "Ancillary",
+        text = {
+          "Add a {C:green}Green Seal{}",
+          "to {C:attention}1{} selected",
+          "card in your hand"
+        }
+      }
     )
 
     refresh_items()
@@ -39,14 +61,6 @@ end
 local calculate_seal_ref = Card.calculate_seal
 function Card:calculate_seal(context)
     local fromRef = calculate_seal_ref(self, context)
-
-    if context.cardarea == G.play and not context.repetition_only then
-        if self.seal == 'Green' then
-            return {
-                x_mult = 0.75
-            }
-        end
-    end
 
     if context.discard then
         if self.seal == 'Green' then
@@ -71,21 +85,6 @@ function Card:calculate_seal(context)
                     return true
                 end)
             }))
-        end
-    end
-
-    return fromRef
-end
-
--- Applies x_mult when card played
-local eval_card_ref = eval_card
-function eval_card(card, context)
-    local fromRef = eval_card_ref(card, context)
-
-    if context.scoring_hand and not context.repetition_only then
-        local seal = card:calculate_seal(context)
-        if seal then
-            fromRef.x_mult = (fromRef.x_mult or 1) * seal.x_mult
         end
     end
 
@@ -165,7 +164,6 @@ function Card:open()
                                     1,
                                     #G.P_CENTER_POOLS['Seal']
                                 )
-
 
                                 local sealName
                                 for k, v in pairs(G.P_SEALS) do

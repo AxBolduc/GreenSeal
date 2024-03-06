@@ -56,5 +56,24 @@ function add_seal(mod_id, sealId, locId, labelName, data, desc)
     G.localization.misc.labels[locId] = labelName
 end
 
+function add_item(mod_id, pool, id, data, desc)
+    -- Add Sprite
+    data.pos = { x = 0, y = 0 };
+    data.key = id;
+    data.atlas = mod_id .. id;
+    SMODS.Sprite:new(mod_id .. id, SMODS.findModByID(mod_id).path, id .. ".png", 71, 95, "asset_atli"):register();
+
+    data.key = id
+    data.order = #G.P_CENTER_POOLS[pool] + 1
+    G.P_CENTERS[id] = data
+    table.insert(G.P_CENTER_POOLS[pool], data)
+
+    if pool == "Joker" then
+        table.insert(G.P_JOKER_RARITY_POOLS[data.rarity], data)
+    end
+
+    G.localization.descriptions[pool][id] = desc;
+end
+
 ----------------------------------------------
 ------------MOD CODE END----------------------
