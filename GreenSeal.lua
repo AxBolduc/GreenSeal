@@ -38,6 +38,8 @@ function SMODS.INIT.RatSeal()
       'ancillary',
       {
         discovered = false,
+        cost = 4,
+        consumable = true,
         set = 'Spectral',
         config = {
           extra = 'Green',
