@@ -21,7 +21,7 @@ function SMODS.INIT.RatSeal()
         {
             discovered = false,
             set = 'Seal',
-            config = { }
+            config = {}
         },
         {
             name = "Green Seal",
@@ -33,53 +33,30 @@ function SMODS.INIT.RatSeal()
     )
 
     add_item(
-      MOD_ID,
-      'Spectral',
-      'ancillary',
-      {
-        discovered = false,
-        cost = 4,
-        consumable = true,
-        set = 'Spectral',
-        config = {
-          extra = 'Green',
-          max_highlighted = 1
+        MOD_ID,
+        'Spectral',
+        'ancillary',
+        {
+            discovered = false,
+            cost = 4,
+            consumeable = true,
+            set = 'Spectral',
+            name = 'Ancillary',
+            config = {
+                extra = 'Green',
+                max_highlighted = 1
+            }
+        },
+        {
+            name = "Ancillary",
+            text = {
+                "Add a {C:green}Green Seal{}",
+                "to {C:attention}1{} selected",
+                "card in your hand"
+            }
         }
-      },
-      {
-        name = "Ancillary",
-        text = {
-          "Add a {C:green}Green Seal{}",
-          "to {C:attention}1{} selected",
-          "card in your hand"
-        }
-      }
     )
 
-
-    add_item(
-      MOD_ID,
-      'Planet',
-      'ancillary',
-      {
-        discovered = false,
-        cost = 4,
-        consumable = true,
-        set = 'Planet',
-        config = {
-          extra = 'Green',
-          max_highlighted = 1
-        }
-      },
-      {
-        name = "Ancillary",
-        text = {
-          "Add a {C:green}Green Seal{}",
-          "to {C:attention}1{} selected",
-          "card in your hand"
-        }
-      }
-    )
 
     refresh_items()
 end
@@ -250,6 +227,75 @@ function Card:open()
     end
 end
 
+function create_UIBox_your_collection_spectrals()
+    local deck_tables = {}
+    sendDebugMessage("NUM SPECTRALS " .. #G.P_CENTER_POOLS["Spectral"])
+
+    G.your_collection = {}
+    for j = 1, 2 do
+        G.your_collection[j] = CardArea(
+            G.ROOM.T.x + 0.2 * G.ROOM.T.w / 2, G.ROOM.T.h,
+            (3.25 + j) * G.CARD_W,
+            1 * G.CARD_H,
+            { card_limit = j + 3, type = 'title', highlight_limit = 0, collection = true })
+        table.insert(deck_tables,
+            {
+                n = G.UIT.R,
+                config = { align = "cm", padding = 0, no_fill = true },
+                nodes = {
+                    { n = G.UIT.O, config = { object = G.your_collection[j] } }
+                }
+            }
+        )
+    end
+
+    for j = 1, #G.your_collection do
+        for i = 1, 3 + j do
+            local center = G.P_CENTER_POOLS["Spectral"][i + (j - 1) * 3 + j - 1]
+
+            local card = Card(G.your_collection[j].T.x + G.your_collection[j].T.w / 2, G.your_collection[j].T.y, G
+                .CARD_W,
+                G.CARD_H, nil, center)
+            card:start_materialize(nil, i > 1 or j > 1)
+            G.your_collection[j]:emplace(card)
+        end
+    end
+
+    local spectral_options = {}
+    for i = 1, math.ceil(#G.P_CENTER_POOLS.Spectral / 9) do
+        table.insert(spectral_options,
+            localize('k_page') .. ' ' .. tostring(i) .. '/' .. tostring(math.ceil(#G.P_CENTER_POOLS.Spectral / 9)))
+    end
+
+    INIT_COLLECTION_CARD_ALERTS()
+
+    local t = create_UIBox_generic_options({
+        back_func = 'your_collection',
+        contents = {
+            { n = G.UIT.R, config = { align = "cm", minw = 2.5, padding = 0.1, r = 0.1, colour = G.C.BLACK, emboss = 0.05 }, nodes = deck_tables },
+            {
+                n = G.UIT.R,
+                config = { align = "cm", padding = 0 },
+                nodes = {
+                    create_option_cycle({
+                        options = spectral_options,
+                        w = 4.5,
+                        cycle_shoulders = true,
+                        opt_callback =
+                        'your_collection_spectral_page',
+                        focus_args = { snap_to = true, nav = 'wide' },
+                        current_option = 1,
+                        colour = G
+                            .C.RED,
+                        no_pips = true
+                    })
+                }
+            },
+        }
+    })
+    return t
+end
+
 -- UI code for seal
 local generate_card_ui_ref = generate_card_ui
 function generate_card_ui(_c, full_UI_table, specific_vars, card_type, badges, hide_desc, main_start, main_end)
@@ -257,6 +303,13 @@ function generate_card_ui(_c, full_UI_table, specific_vars, card_type, badges, h
         main_end)
 
     local info_queue = {}
+
+    if _c.set == 'Spectral' then
+        if _c.name == 'Ancillary' then
+            info_queue[#info_queue + 1] = { key = 'ancillary', set = 'Spectral' }
+        end
+    end
+
 
     if not (_c.set == 'Edition') and badges then
         for k, v in ipairs(badges) do
@@ -291,6 +344,8 @@ function Controller:key_press_update(key, dt)
     if not _RELEASE_MODE then
         if self.hovering.target and self.hovering.target:is(Card) then
             local _card = self.hovering.target
+
+            sendDebugMessage("CARD: " .. _card.config.center.key)
             if key == 'e' then
                 if (_card.ability.set == 'Joker' or _card.playing_card or _card.area) then
                     _card:set_seal('Green', true, true)
@@ -305,5 +360,33 @@ function Controller:key_press_update(key, dt)
     end
 end
 
+function add_joker(joker, edition, silent, eternal)
+    sendDebugMessage("TRYING TO PLACE CARD")
+    local _area = G.P_CENTERS[joker].consumeable and G.consumeables or G.jokers
+    local _T = _area and _area.T or { x = G.ROOM.T.w / 2 - G.CARD_W / 2, y = G.ROOM.T.h / 2 - G.CARD_H / 2 }
+    local card = Card(_T.x, _T.y, G.CARD_W, G.CARD_H, G.P_CARDS.empty, G.P_CENTERS[joker],
+        {
+            discover = true,
+            bypass_discovery_center = true,
+            bypass_discovery_ui = true,
+            bypass_back = G.GAME
+                .selected_back.pos
+        })
+    card:start_materialize(nil, silent)
+    if _area then card:add_to_deck() end
+    if edition then card:set_edition { [edition] = true } end
+    if eternal then card:set_eternal(true) end
+    if _area and card.ability.set == 'Joker' then
+        _area:emplace(card)
+    elseif G.consumeables then
+        sendDebugMessage("PLACING CARD")
+        G.consumeables:emplace(card)
+    end
+    card.created_on_pause = nil
+
+    return card
+end
+
 ----------------------------------------------
 ------------MOD CODE END----------------------
+
