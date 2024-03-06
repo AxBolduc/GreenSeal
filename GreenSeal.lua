@@ -59,7 +59,7 @@ function SMODS.INIT.RatSeal()
 
     add_item(
       MOD_ID,
-      'Spectral',
+      'Planet',
       'ancillary',
       {
         discovered = false,
