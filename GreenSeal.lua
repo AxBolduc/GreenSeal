@@ -1,7 +1,7 @@
 --- STEAMODDED HEADER
 --- MOD_NAME: Green Seal
 --- MOD_ID: GreenSeal
---- MOD_AUTHOR: [AxBolduc]
+--- MOD_AUTHOR: [AxBolduc, mwithington]
 --- MOD_DESCRIPTION: Adds a Green Seal to the game
 
 ----------------------------------------------
@@ -35,9 +35,9 @@ function SMODS.INIT.RatSeal()
     add_item(
         MOD_ID,
         'Spectral',
-        'ancillary',
+        'c_ancillary',
         {
-            discovered = false,
+            discovered = true,
             cost = 4,
             consumeable = true,
             set = 'Spectral',
@@ -57,7 +57,7 @@ function SMODS.INIT.RatSeal()
         }
     )
 
-
+    parse_save_for_new_cards()
     refresh_items()
 end
 
@@ -227,6 +227,7 @@ function Card:open()
     end
 end
 
+-- Fix the spectral card ui in the collection to show more pages
 function create_UIBox_your_collection_spectrals()
     local deck_tables = {}
     sendDebugMessage("NUM SPECTRALS " .. #G.P_CENTER_POOLS["Spectral"])
@@ -306,7 +307,7 @@ function generate_card_ui(_c, full_UI_table, specific_vars, card_type, badges, h
 
     if _c.set == 'Spectral' then
         if _c.name == 'Ancillary' then
-            info_queue[#info_queue + 1] = { key = 'ancillary', set = 'Spectral' }
+            info_queue[#info_queue + 1] = { key = 'green_seal', set = 'Other' }
         end
     end
 
@@ -360,33 +361,57 @@ function Controller:key_press_update(key, dt)
     end
 end
 
-function add_joker(joker, edition, silent, eternal)
-    sendDebugMessage("TRYING TO PLACE CARD")
-    local _area = G.P_CENTERS[joker].consumeable and G.consumeables or G.jokers
-    local _T = _area and _area.T or { x = G.ROOM.T.w / 2 - G.CARD_W / 2, y = G.ROOM.T.h / 2 - G.CARD_H / 2 }
-    local card = Card(_T.x, _T.y, G.CARD_W, G.CARD_H, G.P_CARDS.empty, G.P_CENTERS[joker],
-        {
-            discover = true,
-            bypass_discovery_center = true,
-            bypass_discovery_ui = true,
-            bypass_back = G.GAME
-                .selected_back.pos
-        })
-    card:start_materialize(nil, silent)
-    if _area then card:add_to_deck() end
-    if edition then card:set_edition { [edition] = true } end
-    if eternal then card:set_eternal(true) end
-    if _area and card.ability.set == 'Joker' then
-        _area:emplace(card)
-    elseif G.consumeables then
-        sendDebugMessage("PLACING CARD")
-        G.consumeables:emplace(card)
-    end
-    card.created_on_pause = nil
+-- Spectral card functionality
+local card_use_consumeable_ref = Card.use_consumeable
+function Card:use_consumeable(area, copier)
+    local from_ref = card_use_consumeable_ref(self, area, copier)
 
-    return card
+    stop_use()
+    if not copier then set_consumeable_usage(self) end
+    if self.debuff then return nil end
+    local used_tarot = copier or self
+
+    if self.ability.consumeable.max_highlighted then
+        update_hand_text({ immediate = true, nopulse = true, delay = 0 },
+            { mult = 0, chips = 0, level = '', handname = '' })
+    end
+
+    if self.ability.name == 'Ancillary' then
+        local conv_card = G.hand.highlighted[1]
+        G.E_MANAGER:add_event(Event({
+            func = function()
+                play_sound('tarot1')
+                used_tarot:juice_up(0.3, 0.5)
+                return true
+            end
+        }))
+
+        G.E_MANAGER:add_event(Event({
+            trigger = 'after',
+            delay = 0.1,
+            func = function()
+                conv_card:set_seal(self.ability.extra, nil, true)
+                return true
+            end
+        }))
+        delay(0.5)
+    end
+end
+
+-- https://github.com/GoldenEpsilon/ShamPack/blob/main/ShamPack.lua
+local set_spritesref = Card.set_sprites
+function Card:set_sprites(_center, _front)
+    set_spritesref(self, _center, _front);
+    if _center then
+        if _center.set then
+            if (_center.set == 'Joker' or _center.consumeable or _center.set == 'Voucher') and _center.atlas then
+                self.children.center.atlas = G.ASSET_ATLAS
+                    [(_center.atlas or (_center.set == 'Joker' or _center.consumeable or _center.set == 'Voucher') and _center.set) or 'centers']
+                self.children.center:set_sprite_pos(_center.pos)
+            end
+        end
+    end
 end
 
 ----------------------------------------------
 ------------MOD CODE END----------------------
-
